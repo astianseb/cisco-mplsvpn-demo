@@ -1,8 +1,8 @@
 !
 conf t
 !
-no interface {{LOOPBACK}}
 no vrf definition {{VPN_NAME}}
+no interface {{LOOPBACK}}
 !
 exit
 !
