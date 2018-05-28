@@ -1,0 +1,18 @@
+!
+conf t
+!
+router bgp 1
+ address-family ipv4
+  no network {{INTERFACE_NET}} mask {{INTERFACE_MASK}}
+ exit-address-family
+!
+ no address-family ipv4 vrf {{VPN_NAME}}
+!
+exit
+!
+default interface {{INTERFACE}}
+!
+!
+exit
+!
+wr

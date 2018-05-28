@@ -1,0 +1,5 @@
+a_pe: "10.252.7.196"
+vpnName: "fiveguys"
+rt: "1:3"
+loopback: "Loopback103"
+loopbackIpAndMask: "172.16.0.3 255.255.255.255"

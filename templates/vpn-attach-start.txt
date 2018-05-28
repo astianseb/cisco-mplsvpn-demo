@@ -1,0 +1,25 @@
+!
+conf t
+default interface {{INTERFACE}}
+!
+interface {{INTERFACE}}
+ description --- to {{CUSTOMER_ID}} vrf {{VPN_NAME}} ---
+ vrf forwarding {{VPN_NAME}}
+ ip address {{INTERFACE_IP}} {{INTERFACE_MASK}}
+!
+router bgp 1
+ address-family ipv4
+  network {{INTERFACE_NET}} mask {{INTERFACE_MASK}}
+ exit-address-family
+!
+ address-family ipv4 vrf {{VPN_NAME}}
+  neighbor {{BGP_NEIGHBOR}} remote-as {{BGP_AS}}
+  neighbor {{BGP_NEIGHBOR}} activate
+  neighbor {{BGP_NEIGHBOR}} as-override
+ exit-address-family
+!
+!
+exit
+exit
+!
+wr

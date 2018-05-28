@@ -1,0 +1,22 @@
+!
+conf t
+!
+vrf definition {{VPN_NAME}}
+ rd {{RT}}
+ !
+ address-family ipv4
+  route-target export {{RT}}
+  route-target import {{RT}}
+ exit-address-family
+!
+!
+interface {{LOOPBACK}}
+ description --- loopback for vrf {{VPN_NAME}} ---
+ vrf forwarding {{VPN_NAME}}
+ ip address {{LOOPBACK_IP_AND_MASK}}
+!
+!
+exit
+exit
+!
+wr

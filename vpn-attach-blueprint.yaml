@@ -1,0 +1,113 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
+    - https://github.com/cloudify-incubator/cloudify-utilities-plugin/releases/download/1.5.4/plugin.yaml
+
+
+inputs:
+
+
+  a_pe:
+    description: >
+      PE rotuer IP address.
+    type: string
+    default: "10.252.7.196"
+
+  vpnName:
+    description: >
+      Name of L3VPN.
+    type: string
+    default: "fiveguys"
+
+  interface:
+    description: >
+      Interface to CE
+    type: string
+    default: "GigabitEthernet0/5"
+
+  interfaceIp:
+    description: >
+      IP address of CE interface
+    type: string
+    default: "10.2.128.5"
+
+  interfaceMask:
+    description: >
+      Netmask of IP address of CE interface.
+    type: string
+    default: "255.255.255.252"
+
+  interfaceNet:
+    description: >
+      Network address of CE interface.
+    type: string
+    default: "10.2.128.4"
+
+  customerId:
+    description: >
+      ID represening CE router
+    type: string
+    default: "21234-The5Guys"
+
+  bgpNeigbor:
+    description: >
+      BGP peer IP address of CE router
+    type: string
+    default: "10.2.128.6"
+
+  bgpAs:
+    description: >
+      BGP AS number of CE router
+    type: string
+    default: "65002"
+
+node_templates:
+
+  vpn-attach:
+    type: cloudify.terminal.raw
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          inputs:
+            terminal_auth: &terminal_auth
+              user: "cisco"
+              password: "cisco"
+              ip: { get_input: a_pe }
+              exit_command: "exit"
+              promt_check:
+                - "#"
+              errors:
+                - "%"
+            calls:
+              - action: "exit"
+        start:
+          inputs:
+            terminal_auth: *terminal_auth
+            calls:
+              - template: templates/vpn-attach-start.txt
+                params:
+                  VPN_NAME: { get_input: vpnName }
+                  INTERFACE: { get_input: interface }
+                  INTERFACE_IP: { get_input: interfaceIp }
+                  INTERFACE_MASK: { get_input: interfaceMask }
+                  INTERFACE_NET: { get_input: interfaceNet }
+                  CUSTOMER_ID: { get_input: customerId }
+                  BGP_NEIGHBOR: { get_input: bgpNeigbor }
+                  BGP_AS: { get_input: bgpAs }
+
+        stop:
+          inputs:
+            terminal_auth: *terminal_auth
+            calls:
+              - template: templates/vpn-attach-stop.txt
+                params:
+                  VPN_NAME: { get_input: vpnName }
+                  INTERFACE: { get_input: interface }
+                  INTERFACE_MASK: { get_input: interfaceMask }
+                  INTERFACE_NET: { get_input: interfaceNet }
+
+outputs:
+
+  interface:
+    value: { get_input: interface }

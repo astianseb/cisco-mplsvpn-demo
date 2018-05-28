@@ -1,0 +1,72 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
+    - https://github.com/cloudify-incubator/cloudify-utilities-plugin/releases/download/1.5.4/plugin.yaml
+
+
+inputs:
+
+  vpn_attach_deployment:
+    description: >
+      Deployment for VPN attach
+    type: string
+    default: "vpn-fiveguys-CE1-iosv-1"
+
+  policy:
+    description: >
+      Policy reflecting interface speed
+    type: string
+    default: "300M"
+
+
+node_templates:
+
+  vpn_attach_deployment:
+    type: cloudify.nodes.DeploymentProxy
+    properties:
+      resource_config:
+        blueprint:
+          external_resource: true
+        deployment:
+          id: { get_input: vpn_attach_deployment }
+          external_resource: true
+          outputs:
+            interface: interface_name
+
+
+
+
+  ratelimit:
+    type: cloudify.terminal.raw
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          inputs:
+            terminal_auth: &terminal_auth
+              user: "cisco"
+              password: "cisco"
+              ip: "10.252.7.197"
+              exit_command: "exit"
+              promt_check:
+                - "#"
+              errors:
+                - "%"
+            calls:
+              - action: "exit"
+        start:
+          inputs:
+            terminal_auth: *terminal_auth
+            calls:
+              - template: templates/ratelimit-start.txt
+                params:
+                  INTERFACE: { get_attribute: [vpn_attach_deployment, deployment, outputs, interface_name] }
+                  POLICY: { get_input: policy }
+        stop:
+          inputs:
+            terminal_auth: *terminal_auth
+            calls:
+              - template: templates/ratelimit-stop.txt
+                params:
+                  INTERFACE: { get_attribute: [vpn_attach_deployment, deployment, outputs, interface_name] }
+                  POLICY: { get_input: policy }

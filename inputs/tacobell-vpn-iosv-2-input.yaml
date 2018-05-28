@@ -1,0 +1,5 @@
+a_pe: "10.252.7.196"
+vpnName: "tacobell"
+rt: "1:4"
+loopback: "Loopback104"
+loopbackIpAndMask: "172.16.4.4 255.255.255.255"

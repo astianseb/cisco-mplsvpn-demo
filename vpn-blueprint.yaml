@@ -1,0 +1,78 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
+    - https://github.com/cloudify-incubator/cloudify-utilities-plugin/releases/download/1.5.4/plugin.yaml
+
+
+inputs:
+
+  a_pe:
+    description: >
+      PE rotuer IP address.
+    type: string
+    default: "10.252.7.196"
+
+  vpnName:
+    description: >
+      Name of L3VPN.
+    type: string
+    default: "fiveguys"
+
+  rt:
+    description: >
+      Route target for L3VPN.
+    type: string
+    default: "1:3"
+
+  loopback:
+    description: >
+      Loopback interface.
+    type: string
+    default: "Loopback103"
+
+  loopbackIpAndMask:
+    description: >
+      Loopback IP address and mask.
+    type: string
+    default: "172.16.0.3 255.255.255.255"
+
+node_templates:
+
+
+
+  vpn:
+    type: cloudify.terminal.raw
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          inputs:
+            terminal_auth: &terminal_auth
+              user: "cisco"
+              password: "cisco"
+              ip: { get_input: a_pe }
+              exit_command: "exit"
+              promt_check:
+                - "#"
+              errors:
+                - "%"
+            calls:
+              - action: "exit"
+        start:
+          inputs:
+            terminal_auth: *terminal_auth
+            calls:
+              - template: templates/vpn-start.txt
+                params:
+                  VPN_NAME: { get_input: vpnName }
+                  RT: { get_input: rt }
+                  LOOPBACK: { get_input: loopback }
+                  LOOPBACK_IP_AND_MASK: { get_input: loopbackIpAndMask }
+        stop:
+          inputs:
+            terminal_auth: *terminal_auth
+            calls:
+              - template: templates/vpn-stop.txt
+                params:
+                  VPN_NAME: { get_input: vpnName }
+                  LOOPBACK: { get_input: loopback }

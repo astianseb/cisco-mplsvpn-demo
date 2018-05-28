@@ -1,0 +1,12 @@
+!
+conf t
+!
+interface {{INTERFACE}}
+ service-policy input {{POLICY}}
+ service-policy output {{POLICY}}
+!
+!
+exit
+exit
+!
+wr
