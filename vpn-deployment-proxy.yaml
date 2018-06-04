@@ -1,0 +1,194 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+    - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
+    - https://github.com/cloudify-incubator/cloudify-utilities-plugin/releases/download/1.6.1/plugin.yaml
+
+
+inputs:
+
+  a_pe:
+    description: >
+      PE rotuer IP address.
+    type: string
+    default: "10.252.7.196"
+
+  vpnName:
+    description: >
+      Name of L3VPN.
+    type: string
+    default: "tacobell"
+
+#------------VPN-----------
+
+  vpn_blueprint_name:
+    description: >
+      VPN creation blueprint name
+    type: string
+    default: "VPN-CREATE"
+
+  vpn_deployment_name:
+    description: >
+      VPN creation deployment name
+    type: string
+    default: "vpn-tacobell-iosv-1"
+
+
+  rt:
+    description: >
+      Route target for L3VPN.
+    type: string
+    default: "1:4"
+
+  loopback:
+    description: >
+      Loopback interface.
+    type: string
+    default: "Loopback104"
+
+  loopbackIpAndMask:
+    description: >
+      Loopback IP address and mask.
+    type: string
+    default: "172.16.3.4 255.255.255.255"
+
+#---------ATTACH-------------
+
+  vpn_attach_blueprint_name:
+    description: >
+      VPN attach blueprint name
+    type: string
+    default: "VPN-ATTACH"
+
+  vpn_attach_deployment_name:
+    description: >
+      VPN attach deployment name
+    type: string
+    default: "vpn-tacobell-CE1-iosv-1"
+
+  interface:
+    description: >
+      Interface to CE
+    type: string
+    default: "GigabitEthernet0/6"
+
+  interfaceIp:
+    description: >
+      IP address of CE interface
+    type: string
+    default: "10.3.1.1"
+
+  interfaceMask:
+    description: >
+      Netmask of IP address of CE interface.
+    type: string
+    default: "255.255.255.252"
+
+  interfaceNet:
+    description: >
+      Network address of CE interface.
+    type: string
+    default: "10.3.1.0"
+
+  customerId:
+    description: >
+      ID represening CE router
+    type: string
+    default: "CE1-tacobell"
+
+  bgpNeigbor:
+    description: >
+      BGP peer IP address of CE router
+    type: string
+    default: "10.3.1.2"
+
+  bgpAs:
+    description: >
+      BGP AS number of CE router
+    type: string
+    default: "65020"
+
+
+#----------RATE LIMIT---------------
+
+  ratelimit_blueprint_name:
+    description: >
+      Ratelimit blueprint name
+    type: string
+    default: "VPN-ACCESS-SPEED"
+
+  ratelimit_deployment_name:
+    description: >
+      Ratelimit deployment name
+    type: string
+    default: "vpn-tacobell-CE1-iosv-1-300M"
+
+  policy:
+    description: >
+      Policy reflecting interface speed
+    type: string
+    default: "300M"
+
+
+
+node_templates:
+
+  vpn-iosv-1:
+    type: cloudify.nodes.DeploymentProxy
+    properties:
+      resource_config:
+        blueprint:
+          id: { get_input: vpn_blueprint_name }
+          external_resource: true
+        deployment:
+          id: { get_input: vpn_deployment_name }
+          external_resource: false
+          inputs:
+            a_pe: { get_input: a_pe }
+            vpnName: { get_input: vpnName }
+            rt: { get_input: rt }
+            loopback: { get_input: loopback }
+            loopbackIpAndMask: { get_input: loopbackIpAndMask }
+
+  ce1-iosv-1:
+    type: cloudify.nodes.DeploymentProxy
+    properties:
+      resource_config:
+        blueprint:
+          id: { get_input: vpn_attach_blueprint_name }
+          external_resource: true
+        deployment:
+          id: { get_input: vpn_attach_deployment_name }
+          external_resource: false
+          inputs:
+            a_pe: { get_input: a_pe }
+            vpnName: { get_input: vpnName }
+            interface: { get_input: interface }
+            interfaceIp: { get_input: interfaceIp }
+            interfaceMask: { get_input: interfaceMask }
+            interfaceNet: { get_input: interfaceNet }
+            customerId: { get_input: customerId }
+            bgpNeigbor: { get_input: bgpNeigbor }
+            bgpAs: { get_input: bgpAs }
+    relationships:
+      - type: cloudify.relationships.connected_to
+        target: vpn-iosv-1
+
+
+  ce1-iosv-1-300M:
+    type: cloudify.nodes.DeploymentProxy
+    properties:
+      resource_config:
+        blueprint:
+          id: { get_input: ratelimit_blueprint_name }
+          external_resource: true
+        deployment:
+          id: { get_input: ratelimit_deployment_name }
+          external_resource: false
+          inputs:
+            a_pe: { get_input: a_pe }
+            vpn_attach_deployment: { get_input: vpn_attach_deployment_name }
+            policy: { get_input: policy }
+    relationships:
+      - type: cloudify.relationships.connected_to
+        target: ce1-iosv-1
